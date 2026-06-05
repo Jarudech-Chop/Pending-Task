@@ -4,13 +4,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/fireba
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCfHgobXDmzGD6bZAeSRS4vAnCnoXU3KYE",
-  authDomain: "manday-record.firebaseapp.com",
-  projectId: "manday-record",
-  storageBucket: "manday-record.firebasestorage.app",
-  messagingSenderId: "744520485540",
-  appId: "1:744520485540:web:60f08e9995ec2cf9c07431",
-  measurementId: "G-H60NW9HNX5"
+  apiKey: "AIzaSyB1UPePTn6um9cLis674WQQqFU2cF5iXD4",
+  authDomain: "project-tracker-9dfe9.firebaseapp.com",
+  projectId: "project-tracker-9dfe9",
+  storageBucket: "project-tracker-9dfe9.firebasestorage.app",
+  messagingSenderId: "695229859490",
+  appId: "1:695229859490:web:ea6678492cbfe25002f9fb",
+  measurementId: "G-HT7VPSSPBT"
 };
 
 const app = initializeApp(firebaseConfig);

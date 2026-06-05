@@ -207,7 +207,7 @@
     }
 
     .comment-list {
-      max-width: 340px;
+      max-width: 360px;
     }
 
     .comment-item {
@@ -224,6 +224,20 @@
       color: #64748b;
       font-size: 11px;
       margin-top: 4px;
+    }
+
+    .comment-edited {
+      display: block;
+      color: #0f766e;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .comment-action-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      flex-wrap: wrap;
     }
 
     textarea {
@@ -262,6 +276,18 @@
     .comment-btn {
       background: #22c55e;
       margin-top: 8px;
+    }
+
+    .comment-edit-btn {
+      background: #f59e0b;
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+
+    .comment-delete-btn {
+      background: #ef4444;
+      padding: 6px 10px;
+      font-size: 11px;
     }
 
     button:hover,
@@ -466,12 +492,29 @@
 
         const commentHtml = comments.length === 0
           ? `<div class="empty-message">No comment</div>`
-          : comments.map(comment => `
-              <div class="comment-item">
-                ${escapeHtml(comment.text || "")}
-                <span class="comment-time">${escapeHtml(comment.createdAtText || "")}</span>
-              </div>
-            `).join("");
+          : comments.map((comment, commentIndex) => {
+              const editedText = comment.editedAtText
+                ? `<span class="comment-edited">Edited: ${escapeHtml(comment.editedAtText)}</span>`
+                : "";
+
+              return `
+                <div class="comment-item">
+                  ${escapeHtml(comment.text || "")}
+                  <span class="comment-time">${escapeHtml(comment.createdAtText || "")}</span>
+                  ${editedText}
+
+                  <div class="comment-action-row">
+                    <button class="comment-edit-btn" onclick="editComment('${item.id}', ${commentIndex})">
+                      Edit
+                    </button>
+
+                    <button class="comment-delete-btn" onclick="deleteComment('${item.id}', ${commentIndex})">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join("");
 
         const row = `
           <tr>
@@ -582,6 +625,102 @@
       }
     }
 
+    async function editComment(projectId, commentIndex) {
+      const item = projects.find(project => project.id === projectId);
+
+      if (!item) {
+        alert("ไม่พบ Project ที่ต้องการแก้ไข Comment");
+        return;
+      }
+
+      const comments = Array.isArray(item.comments) ? item.comments : [];
+      const currentComment = comments[commentIndex];
+
+      if (!currentComment) {
+        alert("ไม่พบ Comment ที่ต้องการแก้ไข");
+        return;
+      }
+
+      const newCommentText = prompt("แก้ไข Comment:", currentComment.text || "");
+
+      if (newCommentText === null) {
+        return;
+      }
+
+      const trimmedComment = newCommentText.trim();
+
+      if (!trimmedComment) {
+        alert("Comment ห้ามว่าง");
+        return;
+      }
+
+      const currentTime = getCurrentTimeText();
+
+      const updatedComments = comments.map((comment, index) => {
+        if (index === commentIndex) {
+          return {
+            ...comment,
+            text: trimmedComment,
+            editedAtText: currentTime
+          };
+        }
+
+        return comment;
+      });
+
+      try {
+        await updateDoc(doc(db, collectionName, projectId), {
+          comments: updatedComments,
+          updatedTimeText: currentTime,
+          updatedAt: serverTimestamp()
+        });
+
+        setStatus("Comment updated successfully.");
+        await loadProjects();
+      } catch (error) {
+        console.error("Edit comment error:", error);
+        alert("ไม่สามารถแก้ไข Comment ได้ กรุณาตรวจสอบ Firebase / Firestore Rules");
+      }
+    }
+
+    async function deleteComment(projectId, commentIndex) {
+      const item = projects.find(project => project.id === projectId);
+
+      if (!item) {
+        alert("ไม่พบ Project ที่ต้องการลบ Comment");
+        return;
+      }
+
+      const comments = Array.isArray(item.comments) ? item.comments : [];
+      const currentComment = comments[commentIndex];
+
+      if (!currentComment) {
+        alert("ไม่พบ Comment ที่ต้องการลบ");
+        return;
+      }
+
+      if (!confirm("ต้องการลบ Comment นี้ใช่ไหม?")) {
+        return;
+      }
+
+      const currentTime = getCurrentTimeText();
+      const updatedComments = comments.filter((comment, index) => index !== commentIndex);
+
+      try {
+        await updateDoc(doc(db, collectionName, projectId), {
+          comments: updatedComments,
+          updatedTimeText: currentTime,
+          updatedAt: serverTimestamp()
+        });
+
+        setStatus("Comment deleted successfully.");
+        await loadProjects();
+      } catch (error) {
+        console.error("Delete comment error:", error);
+        alert("ไม่สามารถลบ Comment ได้ กรุณาตรวจสอบ Firebase / Firestore Rules");
+      }
+    }
+
     async function deleteProject(projectId) {
       const item = projects.find(project => project.id === projectId);
 
@@ -646,6 +785,8 @@
 
     window.setFilter = setFilter;
     window.addComment = addComment;
+    window.editComment = editComment;
+    window.deleteComment = deleteComment;
     window.deleteProject = deleteProject;
 
     loadProjects();
